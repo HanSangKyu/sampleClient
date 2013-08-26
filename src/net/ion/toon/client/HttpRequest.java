@@ -39,12 +39,12 @@ public class HttpRequest {
 	}
 
 	
-	public <T> T execute(UIHandler<T> handler){
+	public <T> Future<T> execute(UIHandler<T> handler){
 		return client.execute(this, handler) ;
 	}
 	
 
-	public <T> T execute(AsyncHandler<T> handler) {
+	public <T> Future<T> execute(AsyncHandler<T> handler) {
 		return client.execute(this, handler) ;
 	}
 	

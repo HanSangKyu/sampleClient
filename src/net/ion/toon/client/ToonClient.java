@@ -10,9 +10,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.ecs.xhtml.li;
-
 import net.ion.framework.logging.LogBroker;
 import net.ion.radon.aclient.AsyncHandler;
 import net.ion.radon.aclient.NewClient;
@@ -54,28 +51,19 @@ public class ToonClient implements Closeable {
 		return hostUrl + subPath;
 	}
 
-	public <T> T execute(final HttpRequest request, final UIHandler<T> handler) {
-		Response response = null;
-		try {
-			response = eservice.submit(new Callable<Response>() {
-				@Override
-				public Response call() throws Exception {
-					return newClient.prepareRequest(request.build()).execute().get();
+	public <T> Future<T> execute(final HttpRequest request, final UIHandler<T> handler) {
+		return eservice.submit(new Callable<T>() {
+			@Override
+			public T call() throws Exception {
+				Response response = newClient.prepareRequest(request.build()).execute().get();
+				try {
+					T result = handler.handle(response) ;
+					return result ;
+				} finally {
+					closeQuietly(response) ;
 				}
-			}).get();
-
-			return handler.handle(response);
-
-		} catch (InterruptedException e) {
-			ehandler.handle(e, log);
-		} catch (ExecutionException e) {
-			ehandler.handle(e, log);
-		} catch (Exception e) {
-			ehandler.handle(e, log);
-		} finally {
-			closeQuietly(response);
-		}
-		return null;
+			}
+		});
 	}
 
 	private void closeQuietly(Response response) {
@@ -88,20 +76,13 @@ public class ToonClient implements Closeable {
 		}
 	}
 
-	public <T> T execute(final HttpRequest request, final AsyncHandler<T> handler) {
-		try {
-			return eservice.submit(new Callable<T>() {
-				@Override
-				public T call() throws Exception {
-					return newClient.prepareRequest(request.build()).execute(handler).get();
-				}
-			}).get();
-		} catch (InterruptedException e) {
-			ehandler.handle(e, log);
-		} catch (ExecutionException e) {
-			ehandler.handle(e, log);
-		}
-		return null;
+	public <T> Future<T> execute(final HttpRequest request, final AsyncHandler<T> handler) {
+		return eservice.submit(new Callable<T>() {
+			@Override
+			public T call() throws Exception {
+				return newClient.prepareRequest(request.build()).execute(handler).get();
+			}
+		});
 	}
 
 	@Override
@@ -151,6 +132,10 @@ public class ToonClient implements Closeable {
 			ehandler.handle(e, log);
 		}
 		return null;
+	}
+
+	public ExceptionHandler ehandler() {
+		return ehandler ;
 	}
 
 }
