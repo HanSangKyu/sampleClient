@@ -29,15 +29,6 @@ public class MainActivity extends Activity {
 		try {
 			client = new ToonClient("http://61.250.201.157:9000");
 
-			// handling ui
-			client.createGet("/hello").execute(new UIHandler<Void>() {
-				@Override
-				public Void handle(Response response) throws Exception {
-					tv.setText("Status :" + response.getStatusCode());
-					return null;
-				}
-			}) ;
-
 			// handling logic
 			client.createGet("/hello").execute(new AsyncCompletionHandler<Void>() {
 				@Override
@@ -45,7 +36,17 @@ public class MainActivity extends Activity {
 					System.out.println(response.getTextBody());
 					return null;
 				}
-			}); // not get
+			}).get(); // not get
+
+
+			// handling ui
+			client.createGet("/hello").execute(new UIHandler<Void>() {
+				@Override
+				public Void handle(Response response) throws Exception {
+					tv.setText("Mod Status :" + response.getStatusCode());
+					return null;
+				}
+			}) ;
 
 			// websocket
 			WebSocket wsocket = client.createWebsocket("ws://61.250.201.157:9000/websocket/echo", new WebSocketTextListener() {
@@ -64,6 +65,7 @@ public class MainActivity extends Activity {
 				@Override
 				public void onMessage(String received) {
 					System.out.println(received);
+					tv.setText("Status :" + received);
 				}
 
 				@Override
